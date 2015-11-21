@@ -3,7 +3,7 @@
  * Module exports.
  */
 
-module.exports = exports = PacProxyAgent;
+module.exports = exports = ElectronProxyAgent;
 
 /**
  * Supported "protocols". Delegates out to the `get-uri` module.
@@ -22,7 +22,6 @@ Object.defineProperty(exports, 'protocols', {
 
 var net = require('net');
 var tls = require('tls');
-var crypto = require('crypto');
 var parse = require('url').parse;
 var format = require('url').format;
 var extend = require('extend');
@@ -30,143 +29,36 @@ var Agent = require('agent-base');
 var HttpProxyAgent = require('http-proxy-agent');
 var HttpsProxyAgent = require('https-proxy-agent');
 var SocksProxyAgent = require('socks-proxy-agent');
-var PacResolver = require('pac-resolver');
-var toBuffer = require('stream-to-buffer');
 var inherits = require('util').inherits;
-var debug = require('debug')('pac-proxy-agent');
+var debug = require('debug')('electron-proxy-agent');
 
 /**
- * The `PacProxyAgent` class.
+ * The `ElectronProxyAgent` class.
  *
- * A few different "protocol" modes are supported (supported protocols are
- * backed by the `get-uri` module):
- *
- *   - "pac+data", "data" - refers to an embedded "data:" URI
- *   - "pac+file", "file" - refers to a local file
- *   - "pac+ftp", "ftp" - refers to a file located on an FTP server
- *   - "pac+http", "http" - refers to an HTTP endpoint
- *   - "pac+https", "https" - refers to an HTTPS endpoint
+ * session : {
+ *   resolveProxy(url, callback)
+ * }
+ * 
+ * See https://github.com/atom/electron/blob/master/docs/api/session.md#sesresolveproxyurl-callback
  *
  * @api public
  */
 
-function PacProxyAgent (uri, opts) {
-  if (!(this instanceof PacProxyAgent)) return new PacProxyAgent(uri, opts);
+function ElectronProxyAgent(session) {
+  if (!(this instanceof ElectronProxyAgent)) return new ElectronProxyAgent(uri, opts);
 
-  // was an options object passed in first?
-  if ('object' === typeof uri) {
-    opts = uri;
-
-    // result of a url.parse() call?
-    if (opts.href) {
-      if (opts.path && !opts.pathname) {
-        opts.pathname = opts.path;
-      }
-      opts.slashes = true;
-      uri = format(opts);
-    } else {
-      uri = opts.uri;
-    }
+  if (!session || typeof(session.resolveProxy) !== 'function') {
+    debug('no valid session found, trying to initialize ElectronProxyAgent with defaultSession');
+    session = require('session').defaultSession;
   }
-  if (!opts) opts = {};
-
-  if (!uri) throw new Error('a PAC file URI must be specified!');
-  debug('creating PacProxyAgent with URI %o and options %o', uri, opts);
 
   Agent.call(this, connect);
 
-  // strip the "pac+" prefix
-  this.uri = uri.replace(/^pac\+/i, '');
-
-  this.sandbox = opts.sandox;
-
-  this.proxy = opts;
+  this.session = session;
 
   this.cache = this._resolver = null;
 }
-inherits(PacProxyAgent, Agent);
-
-/**
- * Loads the PAC proxy file from the source if necessary, and returns
- * a generated `FindProxyForURL()` resolver function to use.
- *
- * @param {Function} fn callback function
- * @api private
- */
-
-PacProxyAgent.prototype.loadResolver = function (fn) {
-  var self = this;
-
-  // kick things off by attempting to (re)load the contents of the PAC file URI
-  this.loadPacFile(onpacfile);
-
-  // loadPacFile() callback function
-  function onpacfile (err, code) {
-    if (err) {
-      if ('ENOTMODIFIED' == err.code) {
-        debug('got ENOTMODIFIED response, reusing previous proxy resolver');
-        fn(null, self._resolver);
-      } else {
-        fn(err);
-      }
-      return;
-    }
-
-    // create a sha1 hash of the JS code
-    var hash = crypto.createHash('sha1').update(code).digest('hex');
-
-    if (self._resolver && self._resolver.hash == hash) {
-      debug('same sha1 hash for code - contents have not changed, reusing previous proxy resolver');
-      fn(null, self._resolver);
-      return;
-    }
-
-    // cache the resolver
-    debug('creating new proxy resolver instance');
-    self._resolver = new PacResolver(code, {
-      filename: self.uri,
-      sandbox: self.sandbox
-    });
-
-    // store that sha1 hash on the resolver instance
-    // for future comparison purposes
-    self._resolver.hash = hash;
-
-    fn(null, self._resolver);
-  }
-};
-
-/**
- * Loads the contents of the PAC proxy file.
- *
- * @param {Function} fn callback function
- * @api private
- */
-
-PacProxyAgent.prototype.loadPacFile = function (fn) {
-  debug('loading PAC file: %o', this.uri);
-  var self = this;
-
-  // delegate out to the `get-uri` module
-  var opts = {};
-  if (this.cache) {
-    opts.cache = this.cache;
-  }
-  getUri(this.uri, opts, onstream);
-
-  function onstream (err, rs) {
-    if (err) return fn(err);
-    debug('got stream.Readable instance for URI');
-    self.cache = rs;
-    toBuffer(rs, onbuffer);
-  }
-
-  function onbuffer (err, buf) {
-    if (err) return fn(err);
-    debug('read %o byte PAC file from URI', buf.length);
-    fn(null, buf.toString('utf8'));
-  }
-};
+inherits(ElectronProxyAgent, Agent);
 
 /**
  * Called when the node-core HTTP client library is creating a new HTTP request.
@@ -180,46 +72,33 @@ function connect (req, opts, fn) {
   var self = this;
   var secure = Boolean(opts.secureEndpoint);
 
-  // first we need get a generated FindProxyForURL() function,
-  // either cached or retreived from the source
-  this.loadResolver(onresolver);
-
-  // `loadResolver()` callback function
-  function onresolver (err, FindProxyForURL) {
-    if (err) return fn(err);
-
-    // calculate the `url` parameter
-    var defaultPort = secure ? 443 : 80;
-    var path = req.path;
-    var firstQuestion = path.indexOf('?');
-    var search;
-    if (-1 != firstQuestion) {
-      search = path.substring(firstQuestion);
-      path = path.substring(0, firstQuestion);
-    }
-    url = format(extend({}, opts, {
-      protocol: secure ? 'https:' : 'http:',
-      pathname: path,
-      search: search,
-
-      // need to use `hostname` instead of `host` otherwise `port` is ignored
-      hostname: opts.host,
-      host: null,
-
-      // set `port` to null when it is the protocol default port (80 / 443)
-      port: defaultPort == opts.port ? null : opts.port
-    }));
-
-    // calculate the `host` parameter
-    host = parse(url).hostname;
-
-    debug('url: %o, host: %o', url, host);
-    FindProxyForURL(url, host, onproxy);
+  // calculate the `url` parameter
+  var defaultPort = secure ? 443 : 80;
+  var path = req.path;
+  var firstQuestion = path.indexOf('?');
+  var search;
+  if (-1 != firstQuestion) {
+    search = path.substring(firstQuestion);
+    path = path.substring(0, firstQuestion);
   }
+  url = format(extend({}, opts, {
+    protocol: secure ? 'https:' : 'http:',
+    pathname: path,
+    search: search,
 
-  // `FindProxyForURL()` callback function
-  function onproxy (err, proxy) {
-    if (err) return fn(err);
+    // need to use `hostname` instead of `host` otherwise `port` is ignored
+    hostname: opts.host,
+    host: null,
+
+    // set `port` to null when it is the protocol default port (80 / 443)
+    port: defaultPort == opts.port ? null : opts.port
+  }));
+
+  debug('url: %o', url);
+  self.session.resolveProxy(url, onproxy);
+
+  // `resolveProxy()` callback function
+  function onproxy (proxy) {
 
     // default to "DIRECT" if a falsey value was returned (or nothing)
     if (!proxy) proxy = 'DIRECT';
@@ -250,7 +129,7 @@ function connect (req, opts, fn) {
       // use an HTTP or HTTPS proxy
       // http://dev.chromium.org/developers/design-documents/secure-web-proxy
       var proxyURL = ('HTTPS' === type ? 'https' : 'http') + '://' + parts[1];
-      var proxy = extend({}, self.proxy, parse(proxyURL));
+      var proxy = parse(proxyURL);
       if (secure) {
         agent = new HttpsProxyAgent(proxy);
       } else {
