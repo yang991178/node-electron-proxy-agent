@@ -1,10 +1,11 @@
 electron-proxy-agent
 ===============
-### A proxy `http.Agent` implementation for HTTP and HTTPS, made to work with [Electron](https://github.com/atom/electron) API
+### A proxy `http.Agent` implementation for HTTP and HTTPS,
+rewritten to work seamlessly with [Electron](https://github.com/atom/electron) API
 
 This module provides an `http.Agent` implementation that uses the [session.resolveProxy](https://github.com/atom/electron/blob/master/docs/api/session.md#sesresolveproxyurl-callback) API of [Electron](https://github.com/atom/electron) to resolve which HTTP, HTTPS, or SOCKS proxy, or if a direct connection should be used to connect to the HTTP(S) endpoint.
 
-It is designed to be be used with the built-in `http` and `https` modules.
+It is designed to be be used with the built-in `http` and `https` modules
 
 
 Installation
@@ -17,9 +18,10 @@ $ npm install electron-proxy-agent --save
 ```
 
 
-Example
+Examples
 -------
 
+- Single request
 ``` js
 var url = require('url');
 var http = require('http');
@@ -39,6 +41,17 @@ http.get(opts, function (res) {
   console.log('"response" event!', res.headers);
   res.pipe(process.stdout);
 });
+```
+
+- Global agent
+``` js
+var http = require('http');
+var https = require('http');
+var ElectronProxyAgent = require('electron-proxy-agent');
+var session = require('session').defaultSession;
+
+// use ElectronProxyAgent as http and https globalAgents
+http.globalAgent = https.globalAgent = new ElectronProxyAgent(session);
 ```
 
 Notes
