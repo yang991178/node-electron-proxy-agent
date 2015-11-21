@@ -49,7 +49,11 @@ function ElectronProxyAgent(session) {
 
   if (!session || typeof(session.resolveProxy) !== 'function') {
     debug('no valid session found, trying to initialize ElectronProxyAgent with defaultSession');
-    session = require('session').defaultSession;
+    if (typeof(window) === 'undefined') {
+      session = require('session').defaultSession;
+    } else {
+      session = require('remote').getCurrentWindow().webContents.session;
+    }
   }
 
   Agent.call(this, connect);
