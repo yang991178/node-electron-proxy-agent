@@ -45,7 +45,7 @@ var debug = require('debug')('electron-proxy-agent');
  */
 
 function ElectronProxyAgent(session) {
-  if (!(this instanceof ElectronProxyAgent)) return new ElectronProxyAgent(uri, opts);
+  if (!(this instanceof ElectronProxyAgent)) return new ElectronProxyAgent(session);
 
   if (!session || typeof(session.resolveProxy) !== 'function') {
     debug('no valid session found, trying to initialize ElectronProxyAgent with defaultSession');
