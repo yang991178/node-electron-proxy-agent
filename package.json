@@ -21,7 +21,7 @@
   "authors": [
     "Nathan Rajlich <nathan@tootallnate.net> (http://n8.io/)",
     "Félicien François <felicien@tweakstyle.com> (http://n8.io/)"
-  ]
+  ],
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/TooTallNate/node-pac-proxy-agent/issues"
