@@ -1,17 +1,15 @@
 {
-  "name": "pac-proxy-agent",
+  "name": "electron-proxy-agent",
   "version": "1.0.0",
-  "description": "A PAC file proxy `http.Agent` implementation for HTTP",
+  "description": "NodeJS http(s).Agent implementation for electron shell",
   "main": "index.js",
-  "scripts": {
-    "test": "mocha --reporter spec"
-  },
   "repository": {
     "type": "git",
-    "url": "git://github.com/TooTallNate/node-pac-proxy-agent.git"
+    "url": "git://github.com/felicienfrancois/electron-proxy-agent.git"
   },
   "keywords": [
-    "pac",
+    "electron",
+    "atom shell",
     "proxy",
     "agent",
     "http",
@@ -20,7 +18,10 @@
     "request",
     "access"
   ],
-  "author": "Nathan Rajlich <nathan@tootallnate.net> (http://n8.io/)",
+  "authors": [
+    "Nathan Rajlich <nathan@tootallnate.net> (http://n8.io/)",
+    "Félicien François <felicien@tweakstyle.com> (http://n8.io/)"
+  ]
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/TooTallNate/node-pac-proxy-agent/issues"
@@ -33,9 +34,7 @@
     "get-uri": "1",
     "http-proxy-agent": "1",
     "https-proxy-agent": "1",
-    "pac-resolver": "~1.2.1",
-    "socks-proxy-agent": "2",
-    "stream-to-buffer": "0.1.0"
+    "socks-proxy-agent": "2"
   },
   "devDependencies": {
     "mocha": "2",
