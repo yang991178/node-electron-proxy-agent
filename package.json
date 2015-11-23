@@ -24,9 +24,9 @@
   ],
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/TooTallNate/node-pac-proxy-agent/issues"
+    "url": "https://github.com/felicienfrancois/node-electron-proxy-agent/issues"
   },
-  "homepage": "https://github.com/TooTallNate/node-pac-proxy-agent",
+  "homepage": "https://github.com/felicienfrancois/node-electron-proxy-agent",
   "dependencies": {
     "agent-base": "2",
     "debug": "2",
@@ -35,10 +35,5 @@
     "http-proxy-agent": "1",
     "https-proxy-agent": "1",
     "socks-proxy-agent": "2"
-  },
-  "devDependencies": {
-    "mocha": "2",
-    "proxy": "0.2.3",
-    "socksv5": "0.0.6"
   }
 }
