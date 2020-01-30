@@ -38,7 +38,7 @@ var debug = require('debug')('electron-proxy-agent');
  * session : {
  *   resolveProxy(url, callback)
  * }
- * 
+ *
  * See https://github.com/atom/electron/blob/master/docs/api/session.md#sesresolveproxyurl-callback
  *
  * @api public
@@ -99,10 +99,16 @@ function connect (req, opts, fn) {
   }));
 
   debug('url: %o', url);
-  self.session.resolveProxy(url, onproxy);
+  var handled = false;
+  var promise = self.session.resolveProxy(url, onproxy);
+  if(promise && promise.then) {
+    promise.then(onproxy);
+  }
 
   // `resolveProxy()` callback function
   function onproxy (proxy) {
+    if(handled) return;
+    handled = true
 
     // default to "DIRECT" if a falsey value was returned (or nothing)
     if (!proxy) proxy = 'DIRECT';
