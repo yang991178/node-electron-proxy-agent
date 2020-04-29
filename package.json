@@ -32,8 +32,8 @@
     "debug": "2",
     "extend": "3",
     "get-uri": "1",
-    "http-proxy-agent": "1",
-    "https-proxy-agent": "1",
+    "http-proxy-agent": "^4.0.1",
+    "https-proxy-agent": "^5.0.0",
     "socks-proxy-agent": "2"
   }
 }
