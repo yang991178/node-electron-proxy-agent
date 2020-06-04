@@ -1,11 +1,11 @@
 {
-  "name": "electron-proxy-agent",
-  "version": "1.2.0",
+  "name": "@yang991178/electron-proxy-agent",
+  "version": "1.2.1",
   "description": "NodeJS http(s).Agent implementation for electron shell",
   "main": "index.js",
   "repository": {
     "type": "git",
-    "url": "git://github.com/felicienfrancois/electron-proxy-agent.git"
+    "url": "git://github.com/yang991178/node-electron-proxy-agent.git"
   },
   "keywords": [
     "electron",
@@ -20,13 +20,14 @@
   ],
   "authors": [
     "Nathan Rajlich <nathan@tootallnate.net> (http://n8.io/)",
-    "Félicien François <felicien@tweakstyle.com>"
+    "Félicien François <felicien@tweakstyle.com>",
+    "Haoyuan Liu"
   ],
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/felicienfrancois/node-electron-proxy-agent/issues"
+    "url": "https://github.com/yang991178/node-electron-proxy-agent/issues"
   },
-  "homepage": "https://github.com/felicienfrancois/node-electron-proxy-agent",
+  "homepage": "https://github.com/yang991178/node-electron-proxy-agent",
   "dependencies": {
     "agent-base": "2",
     "debug": "2",
