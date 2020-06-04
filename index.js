@@ -50,9 +50,9 @@ function ElectronProxyAgent(session) {
   if (!session || typeof(session.resolveProxy) !== 'function') {
     debug('no valid session found, trying to initialize ElectronProxyAgent with defaultSession');
     if (typeof(window) === 'undefined') {
-      session = require('session').defaultSession;
+      session = require('electron').session.defaultSession;
     } else {
-      session = require('remote').getCurrentWindow().webContents.session;
+      session = require('electron').remote.getCurrentWindow().webContents.session;
     }
   }
 
@@ -74,7 +74,8 @@ function connect (req, opts, fn) {
   var url;
   var host;
   var self = this;
-  var secure = Boolean(opts.secureEndpoint);
+  var secure = opts.protocol === "https:" || opts.protocol === "wss:";
+  opts.servername = opts.servername || opts.host;
 
   // calculate the `url` parameter
   var defaultPort = secure ? 443 : 80;
@@ -135,6 +136,8 @@ function connect (req, opts, fn) {
     } else if ('SOCKS' == type) {
       // use a SOCKS proxy
       agent = new SocksProxyAgent('socks://' + parts[1]);
+    } else if ('SOCKS5' == type) {
+      agent = new SocksProxyAgent('socks5://' + parts[1]);
     } else if ('PROXY' == type || 'HTTPS' == type) {
       // use an HTTP or HTTPS proxy
       // http://dev.chromium.org/developers/design-documents/secure-web-proxy
