@@ -4,18 +4,6 @@
  */
 
 module.exports = exports = ElectronProxyAgent;
-
-/**
- * Supported "protocols". Delegates out to the `get-uri` module.
- */
-
-var getUri = require('get-uri');
-Object.defineProperty(exports, 'protocols', {
-  enumerable: true,
-  configurable: true,
-  get: function () { return Object.keys(getUri.protocols); }
-});
-
 /**
  * Module dependencies.
  */
@@ -61,6 +49,8 @@ function ElectronProxyAgent(session) {
   this.session = session;
 
   this.cache = this._resolver = null;
+
+  this.agents = {}
 }
 inherits(ElectronProxyAgent, Agent);
 
@@ -72,9 +62,9 @@ inherits(ElectronProxyAgent, Agent);
 
 function connect (req, opts, fn) {
   var url;
-  var host;
   var self = this;
   var secure = opts.protocol === "https:" || opts.protocol === "wss:";
+  opts.secureEndpoint = opts.secureEndpoint || secure;
   opts.servername = opts.servername || opts.host;
 
   // calculate the `url` parameter
@@ -133,12 +123,16 @@ function connect (req, opts, fn) {
         socket = net.connect(opts);
       }
       return fn(null, socket);
-    } else if ('SOCKS' == type) {
+    }
+    if (self.agents[first]) {
+      agent = self.agents[first];
+    }
+    else if ('SOCKS' == type || 'SOCKS5' == type) {
       // use a SOCKS proxy
       agent = new SocksProxyAgent('socks://' + parts[1]);
-    } else if ('SOCKS5' == type) {
-      agent = new SocksProxyAgent('socks5://' + parts[1]);
-    } else if ('PROXY' == type || 'HTTPS' == type) {
+    } else if ('SOCKS4' == type) {
+      agent = new SocksProxyAgent('socks4a://' + parts[1]);
+    } else if ('PROXY' == type || 'HTTPS' == type || 'HTTP' == type) {
       // use an HTTP or HTTPS proxy
       // http://dev.chromium.org/developers/design-documents/secure-web-proxy
       var proxyURL = ('HTTPS' === type ? 'https' : 'http') + '://' + parts[1];
@@ -151,6 +145,9 @@ function connect (req, opts, fn) {
     } else {
       throw new Error('Unknown proxy type: ' + type);
     }
-    if (agent) agent.callback(req, opts, fn);
+    if (agent) {
+      self.agents[first] = agent
+      agent.callback(req, opts, fn);
+    }
   }
 }
